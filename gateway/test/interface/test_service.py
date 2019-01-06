@@ -6,7 +6,8 @@ from gateway.exceptions import OrderNotFound, ProductNotFound
 
 
 class TestGetProduct(object):
-    def test_can_get_product(self, gateway_service, web_session):
+    def test_can_get_product(self, alt_gateway_service):
+        gateway_service = alt_gateway_service
         gateway_service.products_rpc.get.return_value = {
             "in_stock": 10,
             "maximum_speed": 5,
@@ -14,12 +15,37 @@ class TestGetProduct(object):
             "passenger_capacity": 101,
             "title": "The Odyssey"
         }
-        response = web_session.get('/products/the_odyssey')
-        assert response.status_code == 200
+
+        from nameko.extensions import ENTRYPOINT_EXTENSIONS_ATTR
+        from werkzeug.test import EnvironBuilder
+        from nameko.web.server import WebServer
+
+        wsgi_environ = EnvironBuilder(path='/products/the_odyssey').get_environ()
+
+        from werkzeug.test import run_wsgi_app
+        service = gateway_service.container.service_cls()
+        server = gateway_service.container.shared_extensions[WebServer]
+        get_product_method = service.get_product
+        get_product_entrypoint = list(getattr(get_product_method, ENTRYPOINT_EXTENSIONS_ATTR)).pop()
+        get_product_entrypoint = get_product_entrypoint.bind(gateway_service.container, 'get_product')
+        get_product_entrypoint.server = server
+        get_product_entrypoint.setup()
+        wsgi_app = server.get_wsgi_app()
+        body_iterator, status, headers = run_wsgi_app(wsgi_app, wsgi_environ, lambda status, headers: None)
+
+        print(list(body_iterator))
+        print(status)
+        print(headers)
+
+        res_json = json.loads(list(body_iterator).pop())
+        status_code, status_msg = status.split()
+
+        # response = web_session.get('/products/the_odyssey')
+        assert int(status_code) == 200
         assert gateway_service.products_rpc.get.call_args_list == [
             call("the_odyssey")
         ]
-        assert response.json() == {
+        assert res_json == {
             "in_stock": 10,
             "maximum_speed": 5,
             "id": "the_odyssey",

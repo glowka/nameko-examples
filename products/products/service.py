@@ -1,4 +1,5 @@
 import logging
+import os
 
 from nameko.events import event_handler
 from nameko.rpc import rpc

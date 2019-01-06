@@ -56,7 +56,7 @@ services:
 
   products:
     container_name: nameko-example-products
-    image: nameko/nameko-example-products:latest
+    image: nameko/nameko-example-products:dev
     depends_on:
       - rabbit
       - redis
@@ -75,6 +75,31 @@ services:
         RABBIT_HOST: "rabbit"
         RABBIT_PORT: "5672"
         RABBIT_MANAGEMENT_PORT: "15672"
+
+        PNAME: 'p1'
+
+  products2:
+    container_name: nameko-example-products2
+    image: nameko/nameko-example-products:dev
+    depends_on:
+    - rabbit
+    - redis
+    ports:
+    - "8020:8000"
+    links:
+    - "rabbit:nameko-example-rabbitmq"
+    - "redis:nameko-example-redis"
+    environment:
+      REDIS_HOST: "redis"
+      REDIS_PORT: "6379"
+      REDIS_INDEX: "11"
+      REDIS_PASSWORD: "password"
+      RABBIT_PASSWORD: "guest"
+      RABBIT_USER: "guest"
+      RABBIT_HOST: "rabbit"
+      RABBIT_PORT: "5672"
+      RABBIT_MANAGEMENT_PORT: "15672"
+      PNAME: 'p2'
 
   gateway:
     container_name: nameko-example-gateway

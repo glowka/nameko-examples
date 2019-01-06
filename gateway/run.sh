@@ -17,7 +17,6 @@ while ! is_ready; do
     sleep 3
 done
 
-
 # Run Service
 
 nameko run --config config.yml gateway.service --backdoor 3000
